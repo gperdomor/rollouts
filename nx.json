@@ -11,14 +11,17 @@
       "dependencies": "*",
       "devDependencies": "*"
     },
-    ".eslintrc.json": "*"
+    ".eslintrc.json": "*",
+    ".gitlab-ci.yml": "*"
   },
   "tasksRunnerOptions": {
     "default": {
       "runner": "@nrwl/nx-cloud",
       "options": {
         "cacheableOperations": ["build", "lint", "test", "e2e"],
-        "accessToken": "ZDk4ZWQyNDgtNTg1Ny00ZjZlLTgwNmItN2E1MzVmNjRhMjNjfHJlYWQtd3JpdGU="
+        "accessToken": "ZDk4ZWQyNDgtNTg1Ny00ZjZlLTgwNmItN2E1MzVmNjRhMjNjfHJlYWQtd3JpdGU=",
+        "canTrackAnalytics": false,
+        "showUsageWarnings": true
       }
     }
   },
