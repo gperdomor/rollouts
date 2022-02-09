@@ -10,11 +10,38 @@
           "error",
           {
             "enforceBuildableLibDependency": true,
+            "banTransitiveDependencies": true,
             "allow": [],
             "depConstraints": [
               {
-                "sourceTag": "*",
-                "onlyDependOnLibsWithTags": ["*"]
+                "sourceTag": "type:app",
+                "onlyDependOnLibsWithTags": ["type:feature", "type:util"],
+                "bannedExternalImports": []
+              },
+              {
+                "sourceTag": "type:feature",
+                "onlyDependOnLibsWithTags": ["type:feature", "type:util"],
+                "bannedExternalImports": []
+              },
+              {
+                "sourceTag": "type:util",
+                "onlyDependOnLibsWithTags": ["type:util"],
+                "bannedExternalImports": []
+              },
+              {
+                "sourceTag": "scope:core",
+                "onlyDependOnLibsWithTags": ["scope:shared"],
+                "bannedExternalImports": []
+              },
+              {
+                "sourceTag": "scope:shared",
+                "onlyDependOnLibsWithTags": ["scope:shared"],
+                "bannedExternalImports": []
+              },
+              {
+                "sourceTag": "scope:studio",
+                "onlyDependOnLibsWithTags": ["scope:studio", "scope:shared", "scope:core"],
+                "bannedExternalImports": []
               }
             ]
           }
