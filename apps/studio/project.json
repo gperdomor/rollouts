@@ -1,0 +1,54 @@
+{
+  "root": "apps/studio",
+  "sourceRoot": "apps/studio",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "root": "apps/studio",
+        "outputPath": "dist/apps/studio"
+      },
+      "configurations": {
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/next:server",
+      "options": {
+        "buildTarget": "studio:build",
+        "dev": true
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "studio:build:production",
+          "dev": false
+        }
+      }
+    },
+    "export": {
+      "executor": "@nrwl/next:export",
+      "options": {
+        "buildTarget": "studio:build:production"
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/studio"],
+      "options": {
+        "jestConfig": "apps/studio/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/studio/**/*.{ts,tsx,js,jsx}"]
+      }
+    }
+  },
+  "tags": ["type:app", "scope:studio"]
+}
