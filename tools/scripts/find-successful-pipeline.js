@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { fetch } = require('undici');
 const { execSync } = require('child_process');
 const { existsSync, readFileSync, writeFileSync } = require('fs');
 
@@ -7,11 +7,13 @@ const API_TOKEN = process.argv[2];
 const mainBranchName = process.argv[3];
 const projectId = process.argv[4];
 
-const ENV_FILE = '.env';
+const ENV_FILE = 'nx.env';
 
-let BASE_SHA;
+let BASE_SHA = '',
+  HEAD_SHA = '';
+
 (async () => {
-  const HEAD_SHA = execSync(`git rev-parse HEAD`, { encoding: 'utf-8' }).trim();
+  HEAD_SHA = execSync(`git rev-parse HEAD`, { encoding: 'utf-8' }).trim();
 
   if (eventName === 'pull_request') {
     BASE_SHA = execSync(`git merge-base origin/${mainBranchName} HEAD`, { encoding: 'utf-8' }).trim();
@@ -51,7 +53,7 @@ let BASE_SHA;
     );
   }
 
-  lines.push('', `NX_BASE=${BASE_SHA}`, `NX_HEAD=${HEAD_SHA}`, '');
+  lines.push(`NX_BASE=${BASE_SHA}`, `NX_HEAD=${HEAD_SHA}`);
 
   writeFileSync(ENV_FILE, lines.join('\n'), { encoding: 'utf-8' });
 
@@ -61,19 +63,23 @@ let BASE_SHA;
 })();
 
 async function findSuccessfulCommit(projectId, branch) {
-  const { data } = await axios.get(`https://gitlab.com/api/v4/projects/${projectId}/pipelines`, {
-    params: {
-      scope: 'finished',
-      status: 'success',
-      ref: branch,
-      per_page: 50,
-    },
-    headers: {
-      PRIVATE_TOKEN: API_TOKEN,
-    },
-  });
+  const params = {
+    scope: 'finished',
+    status: 'success',
+    ref: branch,
+    per_page: 50,
+  };
 
-  const shas = data.map((pipeline) => pipeline.sha);
+  const response = await fetch(
+    `https://gitlab.com/api/v4/projects/${projectId}/pipelines?${new URLSearchParams(params).toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${API_TOKEN}`,
+      },
+    }
+  );
+  const json = await response.json();
+  const shas = json.map((pipeline) => pipeline.sha);
   return await findExistingCommit(shas);
 }
 
