@@ -12,7 +12,7 @@ stages:
   - test
 
 default:
-  image: node:17.5-alpine
+  image: node:18.0.0-alpine
 
 variables:
   GIT_DEPTH: 0
@@ -27,7 +27,7 @@ variables:
 license_scanning:
   needs: []
   variables:
-    ASDF_NODEJS_VERSION: '17.5'
+    ASDF_NODEJS_VERSION: '18.0'
 
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 secret_detection:
@@ -44,12 +44,6 @@ sast:
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
-  rules:
-    - if: '$CODE_QUALITY_DISABLED'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"' # Run code quality job in merge request pipelines
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH' # Run code quality job in pipelines on the default branch (but not in other branch pipelines)
-    - if: '$CI_COMMIT_TAG'
 
 ###############################
 ### Templates
@@ -74,7 +68,7 @@ code_quality:
 .nx-set-sha:
   before_script:
     # Getting latest success pipeline on main branch
-    - node ./tools/scripts/find-successful-pipeline.js $GL_API_TOKEN $CI_DEFAULT_BRANCH $CI_PROJECT_ID
+    - npx nx-set-shas gitlab -t $API_TOKEN -o nx.env
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
@@ -115,12 +109,16 @@ main:
     - !reference [.nx-set-sha, before_script]
   script:
     - npx nx-cloud start-ci-run
-    - npx nx affected --target=build --parallel --max-parallel=3
-    - npx nx affected --target=lint  --parallel --max-parallel=3
-    - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage
-    # - npx nx affected --target=e2e   --parallel --max-parallel=2
+    - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx workspace-lint
+    - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx format:check
+    - npx nx affected --target=build --parallel --max-parallel=3 &
+    - npx nx affected --target=lint  --parallel --max-parallel=3 &
+    - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage &
+    # - npx nx affected --target=e2e   --parallel --max-parallel=2 &
+    - wait
   after_script:
     - npx nx-cloud stop-all-agents
+    - sleep 5
     - echo 'Done!'
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
