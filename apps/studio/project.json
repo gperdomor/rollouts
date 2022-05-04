@@ -12,16 +12,22 @@
         "outputPath": "dist/apps/studio"
       },
       "configurations": {
+        "development": {},
         "production": {}
       }
     },
     "serve": {
       "executor": "@nrwl/next:server",
+      "defaultConfiguration": "development",
       "options": {
         "buildTarget": "studio:build",
         "dev": true
       },
       "configurations": {
+        "development": {
+          "buildTarget": "studio:build:development",
+          "dev": true
+        },
         "production": {
           "buildTarget": "studio:build:production",
           "dev": false
@@ -38,7 +44,7 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/apps/studio"],
       "options": {
-        "jestConfig": "apps/studio/jest.config.js",
+        "jestConfig": "apps/studio/jest.config.ts",
         "passWithNoTests": true
       }
     },
