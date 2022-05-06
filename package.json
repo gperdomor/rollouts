@@ -36,6 +36,8 @@
     "@nrwl/tao": "14.1.4",
     "@nrwl/web": "14.1.4",
     "@nrwl/workspace": "14.1.4",
+    "@nx-tools/docker-metadata": "3.0.0-alpha.2",
+    "@nx-tools/nx-docker": "3.0.0-alpha.2",
     "@nx-tools/nx-set-shas": "1.0.0-alpha.5",
     "@tailwindcss/aspect-ratio": "0.4.0",
     "@tailwindcss/forms": "0.5.1",

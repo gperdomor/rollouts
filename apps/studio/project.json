@@ -53,6 +53,24 @@
       "options": {
         "lintFilePatterns": ["apps/studio/**/*.{ts,tsx,js,jsx}"]
       }
+    },
+    "docker": {
+      "executor": "@nx-tools/nx-docker:build",
+      "options": {
+        "metadata": {
+          "images": ["rollouts/studio"],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=semver,pattern={{version}}",
+            "type=semver,pattern={{major}}.{{minor}}",
+            "type=semver,pattern={{major}}",
+            "type=sha,prefix=sha-"
+          ]
+        }
+      }
     }
   },
   "tags": ["type:app", "scope:studio"]
