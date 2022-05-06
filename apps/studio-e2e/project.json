@@ -1,5 +1,4 @@
 {
-  "root": "apps/studio-e2e",
   "sourceRoot": "apps/studio-e2e/src",
   "projectType": "application",
   "targets": {
