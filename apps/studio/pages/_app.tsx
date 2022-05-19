@@ -1,17 +1,13 @@
-import { AppProps } from 'next/app';
-import Head from 'next/head';
+import { supabaseClient } from '@supabase/supabase-auth-helpers/nextjs';
+import { UserProvider } from '@supabase/supabase-auth-helpers/react';
+import type { AppProps } from 'next/app';
 import './styles.css';
 
 function CustomApp({ Component, pageProps }: AppProps) {
   return (
-    <>
-      <Head>
-        <title>Welcome to studio!</title>
-      </Head>
-      <main className="app">
-        <Component {...pageProps} />
-      </main>
-    </>
+    <UserProvider supabaseClient={supabaseClient}>
+      <Component {...pageProps} />
+    </UserProvider>
   );
 }
 

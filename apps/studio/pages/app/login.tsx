@@ -1,6 +1,24 @@
+import { Provider } from '@supabase/gotrue-js';
+import { supabaseClient } from '@supabase/supabase-auth-helpers/nextjs';
+import type { NextPage } from 'next';
+import React, { useState } from 'react';
 import styles from './login.module.css';
 
-export default function Home() {
+const Login: NextPage = () => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
+    const provider = e.currentTarget.dataset.provider as Provider;
+    setLoading(true);
+    const { user, session, error } = await supabaseClient.auth.signIn(
+      { provider },
+      {
+        redirectTo: process.env.NEXT_PUBLIC_NODE_ENV !== 'production' ? 'http://app.localhost:4200' : undefined,
+        // process.env.NEXT_PUBLIC_NODE_ENV !== 'production' ? 'http://localhost:4200/app' : undefined,
+      }
+    );
+  };
+
   return (
     <>
       {/*
@@ -67,8 +85,10 @@ export default function Home() {
               </div>
               <div className="mt-6 space-y-4">
                 <div>
-                  <a
-                    href="#"
+                  <button
+                    onClick={handleSignIn}
+                    data-provider="github"
+                    disabled={loading}
                     className={`${styles.a} inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50`}
                   >
                     <svg
@@ -85,11 +105,13 @@ export default function Home() {
                     </svg>
                     <span className="flex-1 text-center">Sign in with GitHub</span>
                     <div className="w-5"></div>
-                  </a>
+                  </button>
                 </div>
                 <div>
-                  <a
-                    href="#"
+                  <button
+                    onClick={handleSignIn}
+                    data-provider="gitlab"
+                    disabled={loading}
                     className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50"
                   >
                     <svg
@@ -126,11 +148,13 @@ export default function Home() {
 
                     <span className="flex-1 text-center text-gray-500">Sign in with GitLab</span>
                     <div className="w-5"></div>
-                  </a>
+                  </button>
                 </div>
                 <div>
-                  <a
-                    href="#"
+                  <button
+                    onClick={handleSignIn}
+                    data-provider="google"
+                    disabled={loading}
                     className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50"
                   >
                     <svg
@@ -161,7 +185,7 @@ export default function Home() {
 
                     <span className="flex-1 text-center">Sign in with Google</span>
                     <div className="w-5"></div>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -170,4 +194,6 @@ export default function Home() {
       </div>
     </>
   );
-}
+};
+
+export default Login;

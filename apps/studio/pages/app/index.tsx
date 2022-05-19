@@ -1,4 +1,21 @@
-export function Index() {
+import { useUser } from '@supabase/supabase-auth-helpers/react';
+import type { NextPage } from 'next';
+import Link from 'next/link';
+import { useEffect } from 'react';
+
+const Index: NextPage = () => {
+  const { user, error } = useUser();
+
+  useEffect(() => {
+    // async function loadData() {
+    //   // const { data } = await supabaseClient.from('test').select('*');
+    //   // setData(data);
+    //   console.log('--> user', user);
+    // }
+    // // Only run query once user is logged in.
+    // if (user) loadData();
+  }, [user]);
+
   /*
    * Replace the elements below with your own.
    *
@@ -10,7 +27,14 @@ export function Index() {
         <div className="container">
           <div id="welcome">
             <h1>
-              <span> Hello there, </span>
+              <span>
+                Hello there, {user?.['email'] || ''}
+                {user && (
+                  <Link href="/api/auth/logout">
+                    <a className="btn">(Logout)</a>
+                  </Link>
+                )}
+              </span>
               Welcome studio 👋
             </h1>
           </div>
@@ -282,6 +306,6 @@ export function Index() {
       </div>
     </div>
   );
-}
+};
 
 export default Index;

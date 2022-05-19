@@ -17,7 +17,7 @@ export default function middleware(req: NextRequest) {
     });
   }
 
-  // Only for demo purposes – remove this if you want to use your root domain as the landing page
+  // Only for demo purposes – remove this if you want to use your root domain as the landing page
   // if (hostname === 'vercel.pub' || hostname === 'platforms.vercel.app') {
   //   return NextResponse.redirect('https://demo.vercel.pub');
   // }
@@ -37,7 +37,6 @@ export default function middleware(req: NextRequest) {
   }
 
   if (!pathname.includes('.') && !pathname.startsWith('/api')) {
-    // console.log('--> cookies', req.cookies['sb-access-token']);
     if (currentHost == 'app') {
       if (pathname === '/login' && req.cookies['sb-access-token']) {
         url.pathname = '/';
