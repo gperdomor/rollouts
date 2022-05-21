@@ -29,7 +29,7 @@ export default function middleware(req: NextRequest) {
 
   const currentHost =
     process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
-      ? hostname.replace(`.vercel.pub`, '').replace(`.platformize.vercel.app`, '')
+      ? hostname.replace(`.gperdomor.dev`, '').replace(`.gperdomor.dev`, '')
       : hostname.replace(`.localhost:4200`, '');
 
   if (pathname.startsWith(`/_sites`)) {
@@ -47,7 +47,7 @@ export default function middleware(req: NextRequest) {
       return NextResponse.rewrite(url);
     }
 
-    if (hostname === 'localhost:4200' || hostname === 'platformize.vercel.app') {
+    if (hostname === 'localhost:4200' || hostname === 'gperdomor.dev') {
       url.pathname = `/home${pathname}`;
       return NextResponse.rewrite(url);
     }

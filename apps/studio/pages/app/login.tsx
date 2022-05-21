@@ -10,13 +10,7 @@ const Login: NextPage = () => {
   const handleSignIn: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
     const provider = e.currentTarget.dataset.provider as Provider;
     setLoading(true);
-    const { user, session, error } = await supabaseClient.auth.signIn(
-      { provider },
-      {
-        redirectTo: process.env.NEXT_PUBLIC_NODE_ENV !== 'production' ? 'http://app.localhost:4200' : undefined,
-        // process.env.NEXT_PUBLIC_NODE_ENV !== 'production' ? 'http://localhost:4200/app' : undefined,
-      }
-    );
+    const { user, session, error } = await supabaseClient.auth.signIn({ provider });
   };
 
   return (
