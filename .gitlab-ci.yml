@@ -14,7 +14,7 @@ stages:
   - docker
 
 default:
-  image: node:18.2.0-alpine
+  image: node:18.4.0-alpine
 
 variables:
   CYPRESS_INSTALL_BINARY: 0
@@ -30,7 +30,7 @@ variables:
 license_scanning:
   needs: []
   variables:
-    ASDF_NODEJS_VERSION: '18.2'
+    ASDF_NODEJS_VERSION: '18.4'
 
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 secret_detection:
@@ -149,7 +149,7 @@ mr:
 main:docker:
   extends: [.node-job]
   stage: docker
-  image: gperdomor/nx-docker:18.1.0-alpine
+  image: gperdomor/nx-docker:18.4.0-alpine
   services:
     - docker:20.10.15-dind
   needs:
