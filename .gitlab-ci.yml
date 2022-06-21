@@ -114,9 +114,9 @@ main:
     - npx nx-cloud start-ci-run
     - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx workspace-lint
     - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx format:check
-    - npx nx affected --target=build --parallel --max-parallel=3 &
-    - npx nx affected --target=lint  --parallel --max-parallel=3 &
-    - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage &
+    - npx nx affected --target=build --parallel --max-parallel=3
+    - npx nx affected --target=lint  --parallel --max-parallel=3
+    - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage
     # - npx nx affected --target=e2e   --parallel --max-parallel=2 &
     - wait
   after_script:
