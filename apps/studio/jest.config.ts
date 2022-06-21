@@ -1,3 +1,4 @@
+/* eslint-disable */
 export default {
   displayName: 'studio',
   preset: '../../jest.preset.js',
@@ -7,4 +8,5 @@ export default {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   coverageDirectory: '../../coverage/apps/studio',
+  setupFilesAfterEnv: ['<rootDir>/setup-jest.ts'],
 };
