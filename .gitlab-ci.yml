@@ -118,7 +118,7 @@ main:
     - npx nx affected --target=lint  --parallel --max-parallel=3
     - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage
     # - npx nx affected --target=e2e   --parallel --max-parallel=2 &
-    - wait
+    # - wait
   after_script:
     - npx nx-cloud stop-all-agents
     - sleep 5
@@ -151,7 +151,7 @@ main:docker:
   stage: docker
   image: gperdomor/nx-docker:18.4.0-alpine
   services:
-    - docker:20.10.15-dind
+    - docker:20.10.17-dind
   needs:
     - job: main
   variables:
