@@ -119,6 +119,7 @@ nx-docker:
     # Nx Docker
     INPUT_PUSH: 'true'
     INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio
+    INPUT_API_IMAGES: registry.gitlab.com/gperdomor/rollouts/api
   before_script:
     # Login to registry
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
