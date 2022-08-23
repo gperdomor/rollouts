@@ -1,4 +1,4 @@
-import { useUser } from '@supabase/supabase-auth-helpers/react';
+import { useUser } from '@supabase/auth-helpers-react';
 import type { NextPage } from 'next';
 import { useEffect } from 'react';
 import { Layout } from '../../components/layout';
