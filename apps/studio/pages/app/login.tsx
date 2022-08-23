@@ -1,5 +1,5 @@
+import { supabaseClient } from '@supabase/auth-helpers-nextjs';
 import { Provider } from '@supabase/gotrue-js';
-import { supabaseClient } from '@supabase/supabase-auth-helpers/nextjs';
 import type { NextPage } from 'next';
 import React, { useState } from 'react';
 import styles from './login.module.css';

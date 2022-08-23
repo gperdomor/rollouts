@@ -9,20 +9,15 @@ include:
   - template: Security/Container-Scanning.gitlab-ci.yml
 
 stages:
-  - setup
+  - affected
   - test
-  - docker
 
 default:
-  image: node:18.4.0-alpine
+  image: node:18.7.0
 
 variables:
-  CYPRESS_INSTALL_BINARY: 0
-  GIT_DEPTH: 0
-  NEXT_TELEMETRY_DISABLED: 1
   NX_CLOUD_ACCESS_TOKEN: $NX_CLOUD_AUTH_TOKEN
   NX_CLOUD_DISTRIBUTED_EXECUTION: 'true'
-  NX_RUN_GROUP: $CI_PIPELINE_ID
 
 ###############################
 ### Included Jobs
@@ -30,7 +25,7 @@ variables:
 license_scanning:
   needs: []
   variables:
-    ASDF_NODEJS_VERSION: '18.4'
+    ASDF_NODEJS_VERSION: '18.7.0'
 
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 secret_detection:
@@ -48,130 +43,94 @@ code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
 
-###############################
-### Templates
-
-.node-job:
+.base-cache:
   cache:
     key:
-      prefix: $CI_PROJECT_NAME
       files:
         - package-lock.json
     paths:
-      - .npm/
+      - '.npm/'
     policy: pull
+
+# Creating template for a job running DTE (orchestrator)
+.base-node:
+  extends: [.base-cache]
+  interruptible: true
   before_script:
     - npm ci --cache .npm --prefer-offline
+    - NX_HEAD=$CI_COMMIT_SHA
+    - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
+  artifacts:
+    expire_in: 5 days
+    paths:
+      - node_modules/.cache/nx
 
-.require-install-deps:
-  needs:
-    - job: install-dependencies
-      optional: true
-
-.nx-set-sha:
-  before_script:
-    # Getting latest success pipeline on main branch
-    - npx nx-set-shas gitlab -t $API_TOKEN -o nx.env
-    - set -a
-      [ -f nx.env ] && . nx.env
-      set +a
-
-###############################
-
-install-dependencies:
-  stage: setup
-  interruptible: true
-  extends: [.node-job]
+# Main job running DTE
+nx-dte:
+  stage: affected
+  extends: .base-node
   cache:
-    key: !reference [.node-job, cache, key]
-    paths: !reference [.node-job, cache, paths]
     policy: pull-push
   script:
-    - echo "Done!..."
-  rules:
-    - changes:
-        - package-lock.json
-
-agents:
-  stage: test
-  extends: [.node-job, .require-install-deps]
-  parallel: 2
-  script:
-    - echo "Start Nx Agent $CI_NODE_INDEX of $CI_NODE_TOTAL"
-    - apk add --no-cache git
-    - npx nx-cloud start-agent
-
-main:
-  extends: [.node-job, .require-install-deps]
-  stage: test
-  variables:
-    NX_BRANCH: $CI_COMMIT_BRANCH
-  before_script:
-    - apk add --no-cache git
-    - !reference [.node-job, before_script]
-    - !reference [.nx-set-sha, before_script]
-  script:
     - npx nx-cloud start-ci-run
-    - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx workspace-lint
-    - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx format:check
-    - npx nx affected --target=build --parallel --max-parallel=3
-    - npx nx affected --target=lint  --parallel --max-parallel=3
-    - npx nx affected --target=test  --parallel --max-parallel=2 --code-coverage
-    # - npx nx affected --target=e2e   --parallel --max-parallel=2 &
-    # - wait
+    - npx nx-cloud record -- npx nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
+    - npx nx-cloud record -- npx nx format:check --base=$NX_BASE --head=$NX_HEAD
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage
+    # - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=e2e --parallel=3 --ci --code-coverage
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
   after_script:
     - npx nx-cloud stop-all-agents
-    - sleep 5
-    - echo 'Done!'
-  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     paths:
-      - dist/
+      - node_modules/.cache/nx
+      - dist
+
+# Create as many agents as you want
+nx-dte-agents:
+  parallel: 2
+  stage: affected
+  extends: .base-node
+  script:
+    - echo "Start Nx Agent $CI_NODE_INDEX of $CI_NODE_TOTAL"
+    - NX_CLOUD_DISTRIBUTED_EXECUTION=false npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=prisma-generate --parallel=3
+    - npx nx-cloud start-agent
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    expire_in: 5 days
     reports:
-      dotenv: nx.env
       coverage_report:
         coverage_format: cobertura
         path: coverage/**/cobertura-coverage.xml
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: delayed
-      start_in: 20 seconds
 
-mr:
-  extends: [main]
-  variables:
-    NX_BRANCH: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-      when: delayed
-      start_in: 20 seconds
-
-main:docker:
-  extends: [.node-job]
-  stage: docker
-  image: gperdomor/nx-docker:18.4.0-alpine
+nx-docker:
+  extends: [.base-cache]
+  image: gperdomor/nx-docker:18.7.0-alpine
+  needs:
+    - nx-dte
   services:
     - docker:20.10.17-dind
-  needs:
-    - job: main
   variables:
-    GIT_DEPTH: 0
-    DOCKER_HOST: tcp://docker:2375/
+    # Docker config
+    DOCKER_BUILDKIT: 1
     DOCKER_DRIVER: overlay2
-    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
     NX_DOCKER_SHORT_SHA_LENGTH: 8
+    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+    # Nx Docker
     INPUT_PUSH: 'true'
     INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio
   before_script:
-    - apk add --no-cache git
-    - !reference [.node-job, before_script]
-  script:
+    # Login to registry
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker buildx create --use
-    - npx nx affected --target=docker
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.base-node, before_script]
+  script:
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=docker --parallel=2
 
 container_scanning:
+  parallel:
+    matrix:
+      - IMAGE: [studio]
   variables:
-    DOCKER_IMAGE: registry.gitlab.com/gperdomor/rollouts/studio:sha-$CI_COMMIT_SHORT_SHA
+    DOCKER_IMAGE: registry.gitlab.com/gperdomor/rollouts/$IMAGE:sha-$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
