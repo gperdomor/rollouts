@@ -130,7 +130,8 @@ nx-docker:
 container_scanning:
   parallel:
     matrix:
-      - IMAGE: [studio]
+      - IMAGE: [api, studio]
+  needs: [nx-docker]
   variables:
     DOCKER_IMAGE: registry.gitlab.com/gperdomor/rollouts/$IMAGE:sha-$CI_COMMIT_SHORT_SHA
   rules:
