@@ -5,6 +5,7 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { oasConfig } from './config/oas.config';
 import { corsOptions, helmetOptions, validationPipeOptions } from './constants';
+import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
 import { PrismaService } from './prisma/prisma.service';
 
 const configureOAS = async (app: NestFastifyApplication) => {
@@ -36,6 +37,7 @@ export const configure = async (app: NestFastifyApplication) => {
   });
 
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   await configureOAS(app);
 

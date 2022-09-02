@@ -13,7 +13,7 @@ stages:
   - test
 
 default:
-  image: node:18.7.0
+  image: node:18.10.0
 
 variables:
   NX_CLOUD_ACCESS_TOKEN: $NX_CLOUD_AUTH_TOKEN
@@ -25,7 +25,7 @@ variables:
 license_scanning:
   needs: []
   variables:
-    ASDF_NODEJS_VERSION: '18.7.0'
+    ASDF_NODEJS_VERSION: '18.10.0'
 
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 secret_detection:
@@ -73,7 +73,7 @@ nx-dte:
     policy: pull-push
   script:
     - npx nx-cloud start-ci-run
-    - npx nx-cloud record -- npx nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
+    # - npx nx-cloud record -- npx nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
     - npx nx-cloud record -- npx nx format:check --base=$NX_BASE --head=$NX_HEAD
     - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3
     - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage
@@ -105,7 +105,7 @@ nx-dte-agents:
 
 nx-docker:
   extends: [.base-cache]
-  image: gperdomor/nx-docker:18.7.0-alpine
+  image: gperdomor/nx-docker:18.10.0-alpine
   needs:
     - nx-dte
   services:
@@ -118,14 +118,58 @@ nx-docker:
     NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
     # Nx Docker
     INPUT_PUSH: 'true'
-    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio
-    INPUT_API_IMAGES: registry.gitlab.com/gperdomor/rollouts/api
+    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio-docker
+    INPUT_API_IMAGES: registry.gitlab.com/gperdomor/rollouts/api-docker
   before_script:
     # Login to registry
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - !reference [.base-node, before_script]
   script:
     - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=docker --parallel=2
+
+nx-podman:
+  extends: [.base-cache]
+  image: gperdomor/nx-podman:18.10.0
+  needs:
+    - nx-dte
+  variables:
+    NX_DOCKER_SHORT_SHA_LENGTH: 8
+    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+    # Nx Docker
+    INPUT_PUSH: 'true'
+    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio-podman
+    INPUT_API_IMAGES: registry.gitlab.com/gperdomor/rollouts/api-podman
+    INPUT_SANDBOX_IMAGES: registry.gitlab.com/gperdomor/rollouts/sandbox-podman
+  before_script:
+    # Login to registry
+    - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - eval "$(fnm env --shell=bash)"
+    - !reference [.base-node, before_script]
+  script:
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=podman --parallel=2
+
+nx-kaniko:
+  extends: [.base-cache]
+  image:
+    name: gperdomor/nx-kaniko:18.10.0-alpine
+    entrypoint: ['']
+  needs:
+    - nx-dte
+  variables:
+    NX_DOCKER_SHORT_SHA_LENGTH: 8
+    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+    # Nx Docker
+    INPUT_PUSH: 'true'
+    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio-kaniko
+    INPUT_API_IMAGES: registry.gitlab.com/gperdomor/rollouts/api-kaniko
+    INPUT_SANDBOX_IMAGES: registry.gitlab.com/gperdomor/rollouts/sandbox-kaniko
+  before_script:
+    # Login to registry
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | base64)\"}}}" > /kaniko/.docker/config.json
+    - !reference [.base-node, before_script]
+  script:
+    # --parallel=1 needs to be 1 to work properly
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=kaniko --parallel=1
 
 container_scanning:
   parallel:
