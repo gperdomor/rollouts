@@ -1,12 +1,15 @@
 {
+  "name": "api",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/api/src",
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nrwl/node:webpack",
+      "executor": "@nrwl/webpack:webpack",
       "outputs": ["{options.outputPath}"],
       "options": {
+        "target": "node",
+        "compiler": "tsc",
         "outputPath": "dist/apps/api",
         "main": "apps/api/src/main.ts",
         "tsConfig": "apps/api/tsconfig.app.json",
@@ -28,7 +31,7 @@
       }
     },
     "serve": {
-      "executor": "@nrwl/node:node",
+      "executor": "@nrwl/js:node",
       "options": {
         "buildTarget": "api:build"
       },
@@ -60,8 +63,48 @@
       }
     },
     "docker": {
-      "executor": "@nx-tools/nx-docker:build",
+      "executor": "@nx-tools/nx-container:build",
       "options": {
+        "engine": "docker",
+        "metadata": {
+          "images": ["rollouts/api"],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=semver,pattern={{version}}",
+            "type=semver,pattern={{major}}.{{minor}}",
+            "type=semver,pattern={{major}}",
+            "type=sha,prefix=sha-"
+          ]
+        }
+      }
+    },
+    "podman": {
+      "executor": "@nx-tools/nx-container:build",
+      "options": {
+        "engine": "podman",
+        "metadata": {
+          "images": ["rollouts/api"],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=semver,pattern={{version}}",
+            "type=semver,pattern={{major}}.{{minor}}",
+            "type=semver,pattern={{major}}",
+            "type=sha,prefix=sha-"
+          ]
+        }
+      }
+    },
+    "kaniko": {
+      "executor": "@nx-tools/nx-container:build",
+      "options": {
+        "engine": "kaniko",
+        "no-cache": true,
         "metadata": {
           "images": ["rollouts/api"],
           "tags": [

@@ -38,8 +38,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Next.js
-.next
-
 .env
 .env.*
+
+# Next.js
+.next
