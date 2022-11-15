@@ -43,34 +43,33 @@ code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
 
-.base-cache:
-  cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - '.npm'
-    policy: pull
+.node-cache: &node-cache
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - '.npm'
+  policy: pull
 
 # Creating template for a job running DTE (orchestrator)
 .base-pipeline:
-  extends: [.base-cache]
   interruptible: true
+  cache:
+    <<: *node-cache
   before_script:
     - npm ci --cache .npm --prefer-offline
-    # - NX_HEAD=$CI_COMMIT_SHA
-    # - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
 
 # Main job running DTE
 nx-dte:
   stage: affected
   extends: .base-pipeline
   cache:
+    <<: *node-cache
     policy: pull-push
   variables:
     GIT_DEPTH: 0
   script:
-    - npx nx-set-shas gitlab -o nx.env
+    - npx nx-set-shas gitlab -o nx.env -t $CI_JOB_TOKEN
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
