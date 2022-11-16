@@ -69,7 +69,7 @@ nx-dte:
   variables:
     GIT_DEPTH: 0
   script:
-    - npx nx-set-shas gitlab -o nx.env -t $CI_JOB_TOKEN
+    - npx nx-set-shas gitlab -o nx.env -t $GL_API_TOKEN
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
