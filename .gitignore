@@ -41,3 +41,9 @@ Thumbs.db
 # Environments
 .env
 .env.*
+
+# NX Container
+.nx-container
+
+# Next.js
+.next

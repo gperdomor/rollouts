@@ -95,3 +95,22 @@ nx-dte-agents:
   extends: .base-pipeline
   script:
     - npx nx-cloud start-agent
+
+container:
+  image: gperdomor/nx-podman:18.12.1
+  cache:
+    <<: *node-cache
+  needs:
+    - nx-dte
+  variables:
+    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+    # Nx Contaienr
+    INPUT_PUSH: 'true'
+    INPUT_ENGINE: 'podman'
+    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio
+  before_script:
+    - !reference [.base-pipeline, before_script]
+    # Login to registry
+    - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=container --parallel=2
