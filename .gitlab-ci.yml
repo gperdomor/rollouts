@@ -13,11 +13,10 @@ stages:
   - test
 
 default:
-  image: node:18.12.1
+  image: node:19.3.0
 
 variables:
   NX_CLOUD_ACCESS_TOKEN: $NX_CLOUD_AUTH_TOKEN
-  NX_CLOUD_DISTRIBUTED_EXECUTION: 'true'
 
 ###############################
 ### Included Jobs
@@ -25,7 +24,7 @@ variables:
 license_scanning:
   needs: []
   variables:
-    ASDF_NODEJS_VERSION: '18.12.1'
+    ASDF_NODEJS_VERSION: '19.3.0'
 
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 secret_detection:
@@ -68,18 +67,21 @@ nx-dte:
     policy: pull-push
   variables:
     GIT_DEPTH: 0
+    NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: 2
   script:
     - npx nx-set-shas gitlab -o nx.env -t $GL_API_TOKEN
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
-    - npx nx-cloud start-ci-run --stop-agents-after="build"
+    - npx nx-cloud start-ci-run
     - npx nx-cloud record -- npx nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
     - npx nx-cloud record -- npx nx format:check --base=$NX_BASE --head=$NX_HEAD
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage
-    # - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=e2e --parallel=3 --ci --code-coverage
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
+    - >
+      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3 &
+      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage &
+      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
+  after_script:
+    - npx nx-cloud stop-all-agents
   artifacts:
     expire_in: 5 days
     paths:
@@ -90,7 +92,7 @@ nx-dte:
 
 # Create as many agents as you want
 nx-dte-agents:
-  # parallel: 2
+  parallel: 2
   stage: affected
   extends: .base-pipeline
   script:
@@ -103,7 +105,6 @@ container:
   needs:
     - nx-dte
   variables:
-    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
     # Nx Contaienr
     INPUT_PUSH: 'true'
     INPUT_ENGINE: 'podman'
