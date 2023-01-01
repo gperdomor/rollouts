@@ -45,9 +45,9 @@ code_quality:
 .node-cache: &node-cache
   key:
     files:
-      - package-lock.json
+      - pnpm-lock.yaml
   paths:
-    - '.npm'
+    - '.pnpm-store'
   policy: pull
 
 # Creating template for a job running DTE (orchestrator)
@@ -56,7 +56,10 @@ code_quality:
   cache:
     <<: *node-cache
   before_script:
-    - npm ci --cache .npm --prefer-offline
+    - corepack enable
+    - corepack prepare pnpm@latest --activate
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install
 
 # Main job running DTE
 nx-dte:
@@ -69,19 +72,19 @@ nx-dte:
     GIT_DEPTH: 0
     NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: 2
   script:
-    - npx nx-set-shas gitlab -o nx.env -t $GL_API_TOKEN
+    - pnpm exec nx-set-shas gitlab -o nx.env -t $GL_API_TOKEN
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
-    - npx nx-cloud start-ci-run
-    - npx nx-cloud record -- npx nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
-    - npx nx-cloud record -- npx nx format:check --base=$NX_BASE --head=$NX_HEAD
+    - pnpm exec nx-cloud start-ci-run
+    - pnpm exec nx-cloud record -- pnpm exec nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
+    - pnpm exec nx-cloud record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
     - >
-      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3 &
-      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage &
-      npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
+      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3 &
+      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage &
+      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
   after_script:
-    - npx nx-cloud stop-all-agents
+    - pnpm exec nx-cloud stop-all-agents
   artifacts:
     expire_in: 5 days
     paths:
@@ -96,7 +99,7 @@ nx-dte-agents:
   stage: affected
   extends: .base-pipeline
   script:
-    - npx nx-cloud start-agent
+    - pnpm exec nx-cloud start-agent
 
 container:
   image: gperdomor/nx-podman:18.12.1
@@ -114,4 +117,4 @@ container:
     # Login to registry
     - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=container --parallel=2
+    - pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=container --parallel=2
