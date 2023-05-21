@@ -1,53 +1,24 @@
 include:
   - template: Workflows/MergeRequest-Pipelines.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - template: Security/License-Scanning.gitlab-ci.yml
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Jobs/Code-Quality.gitlab-ci.yml
-  - template: Jobs/Code-Intelligence.gitlab-ci.yml
-  - template: Security/Container-Scanning.gitlab-ci.yml
 
 stages:
   - affected
-  - test
+  - build
 
 default:
-  image: node:19.3.0
+  image: node:20
 
 variables:
+  CI: 'true'
   NX_CLOUD_ACCESS_TOKEN: $NX_CLOUD_AUTH_TOKEN
-
-###############################
-### Included Jobs
-
-license_scanning:
-  needs: []
-  variables:
-    ASDF_NODEJS_VERSION: '19.3.0'
-
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
-secret_detection:
-  needs: []
-
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-dependency_scanning:
-  needs: []
-
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-sast:
-  needs: []
-
-code_quality:
-  artifacts:
-    paths: [gl-code-quality-report.json]
+  NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: 2
 
 .node-cache: &node-cache
   key:
     files:
       - pnpm-lock.yaml
   paths:
-    - '.pnpm-store'
+    - .pnpm-store
   policy: pull
 
 # Creating template for a job running DTE (orchestrator)
@@ -55,14 +26,22 @@ code_quality:
   interruptible: true
   cache:
     <<: *node-cache
+    policy: pull-push
   before_script:
     - corepack enable
-    - corepack prepare pnpm@latest --activate
+    - corepack prepare pnpm@latest-8 --activate
     - pnpm config set store-dir .pnpm-store
-    - pnpm install
+    - pnpm install --frozen-lockfile
+
+.dte-agent:
+  extends: .base-pipeline
+  cache:
+    <<: *node-cache
+  script:
+    - pnpm exec nx-cloud start-agent
 
 # Main job running DTE
-nx-dte:
+CI:
   stage: affected
   extends: .base-pipeline
   cache:
@@ -70,19 +49,15 @@ nx-dte:
     policy: pull-push
   variables:
     GIT_DEPTH: 0
-    NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: 2
   script:
     - pnpm exec nx-set-shas gitlab -o nx.env -t $GL_API_TOKEN
     - set -a
       [ -f nx.env ] && . nx.env
       set +a
     - pnpm exec nx-cloud start-ci-run
-    - pnpm exec nx-cloud record -- pnpm exec nx workspace-lint --base=$NX_BASE --head=$NX_HEAD
     - pnpm exec nx-cloud record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
-    - >
-      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3 &
-      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage &
-      pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
+    - pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3 & pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=3 --ci --code-coverage & pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=3
+
   after_script:
     - pnpm exec nx-cloud stop-all-agents
   artifacts:
@@ -94,27 +69,31 @@ nx-dte:
       dotenv: nx.env
 
 # Create as many agents as you want
-nx-dte-agents:
-  parallel: 2
+nx-dte-agent1:
+  extends: .dte-agent
   stage: affected
-  extends: .base-pipeline
-  script:
-    - pnpm exec nx-cloud start-agent
+nx-dte-agent2:
+  extends: .dte-agent
+  stage: affected
+# nx-dte-agent3:
+#   extends: .dte-agent
+#   stage: affected
 
 container:
-  image: gperdomor/nx-podman:18.12.1
+  image: gperdomor/nx-podman:20
+  stage: build
   cache:
     <<: *node-cache
   needs:
-    - nx-dte
+    - CI
   variables:
-    # Nx Contaienr
-    INPUT_PUSH: 'true'
-    INPUT_ENGINE: 'podman'
-    INPUT_STUDIO_IMAGES: registry.gitlab.com/gperdomor/rollouts/studio
+    NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
   before_script:
     - !reference [.base-pipeline, before_script]
-    # Login to registry
     - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
-    - pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=container --parallel=2
+    - pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=container --configuration=ci --parallel=2
+  artifacts:
+    expire_in: 5 days
+    paths:
+      - node_modules/.cache/nx-container

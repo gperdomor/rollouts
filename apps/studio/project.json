@@ -5,7 +5,7 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nrwl/next:build",
+      "executor": "@nx/next:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
@@ -20,7 +20,7 @@
       }
     },
     "serve": {
-      "executor": "@nrwl/next:server",
+      "executor": "@nx/next:server",
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "studio:build",
@@ -38,21 +38,27 @@
       }
     },
     "export": {
-      "executor": "@nrwl/next:export",
+      "executor": "@nx/next:export",
       "options": {
         "buildTarget": "studio:build:production"
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/studio/jest.config.ts",
         "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["apps/studio/**/*.{ts,tsx,js,jsx}"]
@@ -61,22 +67,34 @@
     "container": {
       "executor": "@nx-tools/nx-container:build",
       "options": {
-        "engine": "docker",
-        "metadata": {
-          "images": ["rollouts/studio"],
-          "load": true,
-          "tags": [
-            "type=schedule",
-            "type=ref,event=branch",
-            "type=ref,event=tag",
-            "type=ref,event=pr",
-            "type=semver,pattern={{version}}",
-            "type=semver,pattern={{major}}.{{minor}}",
-            "type=semver,pattern={{major}}",
-            "type=sha,prefix=sha-"
-          ]
+        "engine": "docker"
+      },
+      "configurations": {
+        "dev": {
+          "tags": ["rollouts/studio:dev"],
+          "load": true
+        },
+        "ci": {
+          "engine": "podman",
+          "push": true,
+          "quiet": true,
+          "metadata": {
+            "images": ["registry.gitlab.com/gperdomor/rollouts/studio"],
+            "tags": [
+              "type=schedule",
+              "type=ref,event=branch",
+              "type=ref,event=tag",
+              "type=ref,event=pr",
+              "type=semver,pattern={{version}}",
+              "type=semver,pattern={{major}}.{{minor}}",
+              "type=semver,pattern={{major}}",
+              "type=sha,prefix=sha-"
+            ]
+          }
         }
-      }
+      },
+      "dependsOn": ["build"],
+      "defaultConfiguration": "dev"
     }
   },
   "tags": ["type:app", "scope:studio"]
