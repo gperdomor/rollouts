@@ -1,15 +1,22 @@
-const fs = require('fs');
+import { consola } from 'consola';
+import { existsSync, readFileSync } from 'node:fs';
 
-function checkLockFiles() {
+async function checkLockFiles() {
   const errors = [];
-  if (fs.existsSync('package-lock.json')) {
+  if (existsSync('package-lock.json')) {
     errors.push('Invalid occurence of "package-lock.json" file. Please remove it and use only "pnpm-lock.yaml"');
   }
-  if (fs.existsSync('yarn.lock')) {
+  if (existsSync('bun.lockb')) {
+    errors.push('Invalid occurence of "bun.lockb" file. Please remove it and use only "pnpm-lock.yaml"');
+  }
+  if (existsSync('bun.lock')) {
+    errors.push('Invalid occurence of "bun.lockb" file. Please remove it and use only "pnpm-lock.yaml"');
+  }
+  if (existsSync('yarn.lock')) {
     errors.push('Invalid occurence of "yarn.lock" file. Please remove it and use only "pnpm-lock.yaml"');
   }
   try {
-    const content = fs.readFileSync('pnpm-lock.yaml', 'utf-8');
+    const content = readFileSync('pnpm-lock.yaml', 'utf-8');
     if (content.match(/localhost:487/)) {
       errors.push(
         'The "pnpm-lock.yaml" has reference to local repository ("localhost:4873"). Please use ensure you disable local registry before running "pnpm install"'
@@ -24,12 +31,13 @@ function checkLockFiles() {
   return errors;
 }
 
-console.log('🔒🔒🔒 Validating lock files 🔒🔒🔒\n');
-const invalid = checkLockFiles();
+consola.start('🔒🔒🔒 Validating lock files 🔒🔒🔒');
+const invalid = await checkLockFiles();
+
 if (invalid.length > 0) {
-  invalid.forEach((e) => console.log(e));
+  invalid.forEach((e) => consola.error(e));
   process.exit(1);
 } else {
-  console.log('Lock file is valid 👍');
+  consola.success('Lock file is valid 👍');
   process.exit(0);
 }
