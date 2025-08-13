@@ -3,7 +3,7 @@ include:
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
   - template: 'Jobs/Code-Quality.gitlab-ci.yml'
 
-image: node:22
+image: node:22.17.1
 
 variables:
   CI: 'true'
