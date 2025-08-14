@@ -33,6 +33,7 @@
     "@nestjs/schematics": "11.0.7",
     "@nestjs/testing": "11.1.6",
     "@next/eslint-plugin-next": "15.4.6",
+    "@nx-tools/nx-set-shas": "7.0.0-alpha.2",
     "@nx/devkit": "21.3.11",
     "@nx/eslint": "21.3.11",
     "@nx/eslint-plugin": "21.3.11",
