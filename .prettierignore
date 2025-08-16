@@ -4,8 +4,3 @@
 /.nx/cache
 /.nx/workspace-data
 pnpm-lock.yaml
-
-.vscode/mcp.json
-.github/instructions/nx.instructions.md
-apps/**/dist
-apps/**/.next

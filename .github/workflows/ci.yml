@@ -44,11 +44,11 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v4
 
-      # Prepend any command with "nx record --" to record its logs to Nx Cloud
-      - run: pnpm exec nx record -- nx format:check
+      # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
+      - run: pnpm exec nx-cloud record -- nx format:check
 
       # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
-      - run: pnpm exec nx affected -t lint test build
+      - run: pnpm exec nx affected -t lint test build typecheck
 
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: pnpm exec nx fix-ci

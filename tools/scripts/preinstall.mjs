@@ -12,8 +12,8 @@ if (process.env.CI) {
   process.exit(0);
 }
 
-import { execSync } from 'child_process';
 import { consola } from 'consola';
+import { execSync } from 'node:child_process';
 
 /**
  * Configuration for minimum required versions
