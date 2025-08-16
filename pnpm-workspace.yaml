@@ -1,3 +1,16 @@
 packages:
-  - 'packages/*'
-  - 'apps/*'
+  - packages/*
+  - apps/*
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@parcel/watcher'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - esbuild
+  - nx
+  - sharp
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - lefthook
