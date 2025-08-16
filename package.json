@@ -6,8 +6,7 @@
     "check-format": "nx format:check --all",
     "check-lock-files": "node ./tools/scripts/check-lock-files.mjs",
     "commit": "cz",
-    "preinstall": "node ./tools/scripts/preinstall.mjs",
-    "prepare": "husky || true"
+    "preinstall": "node ./tools/scripts/preinstall.mjs"
   },
   "private": true,
   "dependencies": {
@@ -69,16 +68,14 @@
     "eslint-plugin-playwright": "1.8.3",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "5.2.0",
-    "husky": "9.1.7",
     "jest": "30.0.5",
     "jest-environment-jsdom": "30.0.5",
     "jest-environment-node": "30.0.5",
     "jest-util": "30.0.5",
-    "lint-staged": "16.1.5",
+    "lefthook": "1.12.3",
     "nx": "21.3.11",
     "postcss": "8.5.6",
     "prettier": "2.8.8",
-    "semver": "7.7.2",
     "tailwindcss": "4.1.11",
     "ts-jest": "29.4.1",
     "ts-node": "10.9.2",
