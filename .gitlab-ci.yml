@@ -1,5 +1,7 @@
 ---
 workflow:
+  auto_cancel:
+    on_new_commit: conservative
   rules:
     - if: '$CI_MERGE_REQUEST_IID && $CI_COMMIT_REF_NAME =~ /^renovate\/.*$/'
       variables:
@@ -21,7 +23,6 @@ variables:
   CI: 'true'
   GIT_DEPTH: 0
   GIT_FETCH_EXTRA_FLAGS: --filter=tree:0
-  HUSKY: 0
   RUNNER_TAG: 'saas-linux-small-amd64'
   NX_EXTRA_ARGS: ''
 
@@ -64,6 +65,12 @@ CI:
   interruptible: true
   variables:
     NX_CLOUD_ACCESS_TOKEN: $NX_CLOUD_ACCESS_TOKEN
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
   before_script:
     - corepack enable
     - corepack install
@@ -81,17 +88,11 @@ CI:
       [ -f nx.env ] && . nx.env
       set +a
 
-    # Prepend any command with "nx record --" to record its logs to Nx Cloud
-    - pnpm exec nx record -- nx format:check --base=$NX_BASE --head=$NX_HEAD $NX_EXTRA_ARGS
+    # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
+    - pnpm exec nx-cloud record -- nx format:check --base=$NX_BASE --head=$NX_HEAD $NX_EXTRA_ARGS
     # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
     - pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD -t lint test build typecheck $NX_EXTRA_ARGS
   after_script:
     # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
     - pnpm exec nx fix-ci
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
-  cache:
-    key:
-      files:
-        - pnpm-lock.yaml
-    paths:
-      - .pnpm-store
